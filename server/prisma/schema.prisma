@@ -1,0 +1,119 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String    @id @default(uuid())
+  email         String    @unique
+  password      String
+  name          String?
+  role          Role      @default(USER)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  chats         Chat[]
+  images        Image[]
+  documents     Document[]
+  subscription  Subscription?
+  refreshTokens RefreshToken[]
+
+  @@index([email])
+  @@index([role])
+}
+
+model RefreshToken {
+  id        String   @id @default(uuid())
+  token     String   @unique
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([token])
+}
+
+model Chat {
+  id        String    @id @default(uuid())
+  messages  Message[]
+  userId    String
+  user      User      @relation(fields: [userId], references: [id])
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  @@index([userId])
+  @@index([createdAt])
+}
+
+model Message {
+  id        String    @id @default(uuid())
+  content   String
+  role      Role
+  chatId    String
+  chat      Chat      @relation(fields: [chatId], references: [id])
+  createdAt DateTime  @default(now())
+
+  @@index([chatId])
+  @@index([createdAt])
+}
+
+model Image {
+  id        String    @id @default(uuid())
+  prompt    String
+  imageUrl  String
+  userId    String
+  user      User      @relation(fields: [userId], references: [id])
+  createdAt DateTime  @default(now())
+
+  @@index([userId])
+  @@index([createdAt])
+}
+
+model Document {
+  id        String    @id @default(uuid())
+  title     String
+  content   String
+  userId    String
+  user      User      @relation(fields: [userId], references: [id])
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  @@index([userId])
+  @@index([title])
+  @@index([createdAt])
+}
+
+model Subscription {
+  id        String    @id @default(uuid())
+  plan      Plan      @default(FREE)
+  status    Status    @default(ACTIVE)
+  userId    String    @unique
+  user      User      @relation(fields: [userId], references: [id])
+  startDate DateTime  @default(now())
+  endDate   DateTime?
+
+  @@index([userId])
+  @@index([plan, status])
+}
+
+enum Role {
+  USER
+  ADMIN
+  ASSISTANT
+}
+
+enum Plan {
+  FREE
+  PRO
+  ENTERPRISE
+}
+
+enum Status {
+  ACTIVE
+  CANCELLED
+  EXPIRED
+}
